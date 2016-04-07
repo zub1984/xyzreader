@@ -27,11 +27,10 @@ public class RemoteEndpointUtil {
             Log.e(TAG, "Error fetching items JSON", e);
             return null;
         }
-
         // Parse JSON
         try {
-            JSONTokener tokener = new JSONTokener(itemsJson);
-            Object val = tokener.nextValue();
+            JSONTokener tokenValue = new JSONTokener(itemsJson);
+            Object val = tokenValue.nextValue();
             if (!(val instanceof JSONArray)) {
                 throw new JSONException("Expected JSONArray");
             }
@@ -39,7 +38,6 @@ public class RemoteEndpointUtil {
         } catch (JSONException e) {
             Log.e(TAG, "Error parsing items JSON", e);
         }
-
         return null;
     }
 
