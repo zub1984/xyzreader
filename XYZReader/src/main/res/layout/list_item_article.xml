@@ -23,7 +23,7 @@
 
         <TextView
             android:id="@+id/article_title"
-            style="@style/List_Item_Text_Style"
+            style="@style/list_item_text_style"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ellipsize="end"
@@ -32,12 +32,12 @@
             android:paddingLeft="@dimen/list_item_text_horizontal_margin"
             android:paddingRight="@dimen/list_item_text_horizontal_margin"
             android:paddingTop="@dimen/list_item_title_top_margin"
-            android:textColor="@color/dkgray"
+            android:textColor="@color/colorPrimaryText"
             tools:text="Test" />
 
         <TextView
             android:id="@+id/article_subtitle"
-            style="@style/List_Item_Text_Style"
+            style="@style/list_item_text_style"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ellipsize="end"
@@ -46,7 +46,7 @@
             android:paddingLeft="@dimen/list_item_text_horizontal_margin"
             android:paddingRight="@dimen/list_item_text_horizontal_margin"
             android:singleLine="true"
-            android:textColor="@color/ltgray"
+            android:textColor="@color/colorSecondaryText"
             tools:text="Secondary Text" />
     </LinearLayout>
 
