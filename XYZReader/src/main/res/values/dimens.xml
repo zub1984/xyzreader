@@ -8,4 +8,9 @@
     <dimen name="fab_press_translation_z">12dp</dimen>
     <dimen name="fab_margin">24dp</dimen>
 
+    <!-- spacing between two views -->
+    <dimen name="large_space">24dp</dimen>
+    <dimen name="normal_space">14dp</dimen>
+    <dimen name="small_space">6dp</dimen>
+
 </resources>

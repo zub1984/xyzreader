@@ -1,4 +1,4 @@
-package com.example.xyzreader.ui;
+package com.example.xyzreader.Activity;
 
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -18,6 +18,8 @@ import android.view.ViewGroup;
 
 import com.example.xyzreader.R;
 import com.example.xyzreader.data.ArticleLoader;
+import com.example.xyzreader.fragment.ArticleDetailFragment;
+import com.example.xyzreader.ui.WindowInsetsViewPager;
 import com.example.xyzreader.utils.Constants;
 
 /**

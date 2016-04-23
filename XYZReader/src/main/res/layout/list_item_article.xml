@@ -17,8 +17,10 @@
         <!--suppress AndroidLintContentDescription -->
         <com.example.xyzreader.ui.DynamicHeightNetworkImageView
             android:id="@+id/thumbnail"
-            android:layout_width="@dimen/list_item_image_width"
-            android:layout_height="@dimen/list_item_image_height"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:scaleType="centerCrop"
             android:background="@color/photo_placeholder" />
 
         <TextView
@@ -28,10 +30,10 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="@integer/list_item_text_max_lines"
-            android:paddingBottom="@dimen/list_item_title_bottom_margin"
-            android:paddingLeft="@dimen/list_item_text_horizontal_margin"
-            android:paddingRight="@dimen/list_item_text_horizontal_margin"
-            android:paddingTop="@dimen/list_item_title_top_margin"
+            android:paddingBottom="@dimen/list_item_title_padding_bottom"
+            android:paddingLeft="@dimen/list_item_padding_normal"
+            android:paddingRight="@dimen/list_item_padding_normal"
+            android:paddingTop="@dimen/list_item_padding_normal"
             android:textColor="@color/colorPrimaryText"
             tools:text="Test" />
 
@@ -42,9 +44,9 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="@integer/list_item_subtitle_max_lines"
-            android:paddingBottom="@dimen/list_item_subtitle_bottom_margin"
-            android:paddingLeft="@dimen/list_item_text_horizontal_margin"
-            android:paddingRight="@dimen/list_item_text_horizontal_margin"
+            android:paddingBottom="@dimen/list_item_padding_normal"
+            android:paddingLeft="@dimen/list_item_padding_normal"
+            android:paddingRight="@dimen/list_item_padding_normal"
             android:singleLine="true"
             android:textColor="@color/colorSecondaryText"
             tools:text="Secondary Text" />

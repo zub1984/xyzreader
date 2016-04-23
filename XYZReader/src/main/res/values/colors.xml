@@ -36,5 +36,13 @@
     <color name="grey_700">#646464</color>
     <color name="black">#000000</color>
     <color name="cover_na_grey">#efefef</color>
+    <color name="theme_accent_progressbar">#FF9800</color>
+
+    <!-- to show the multi colors for progress bar -->
+    <array name="progress_colors">
+        <item>@color/theme_primary_dark</item>
+        <item>@color/theme_accent_progressbar</item>
+        <item>@color/theme_primary</item>
+    </array>
 
 </resources>

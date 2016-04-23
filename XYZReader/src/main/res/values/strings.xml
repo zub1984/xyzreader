@@ -9,7 +9,7 @@
 
     <string name="up" translatable="false">Up</string>
     <string name="shared_element_transition" translatable="false">shared_transition</string>
-    <string name="till_loading" translatable="false">Please wait till loading completes</string>
+    <string name="still_loading" translatable="false">Please wait till loading completes</string>
     <string name="no_internet" translatable="false">No internet connection.</string>
     <string name="retry" translatable="false">Retry</string>
 

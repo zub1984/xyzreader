@@ -1,4 +1,4 @@
-package com.example.xyzreader.ui;
+package com.example.xyzreader.Activity;
 
 import android.app.LoaderManager;
 import android.content.BroadcastReceiver;
@@ -8,9 +8,11 @@ import android.content.IntentFilter;
 import android.content.Loader;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.AppBarLayout;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
@@ -18,20 +20,25 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
-import android.text.format.DateUtils;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.xyzreader.Adapter.ArticleItemsAdapter;
 import com.example.xyzreader.R;
 import com.example.xyzreader.data.ArticleLoader;
 import com.example.xyzreader.data.UpdaterService;
+import com.example.xyzreader.ui.SpaceItemDecoration;
 import com.example.xyzreader.utils.Constants;
 import com.example.xyzreader.utils.NetworkUtils;
+
+import butterknife.Bind;
+import butterknife.BindDimen;
+import butterknife.BindInt;
+import butterknife.ButterKnife;
 
 /**
  * An activity representing a list of Articles. This activity has different presentations for
@@ -40,34 +47,61 @@ import com.example.xyzreader.utils.NetworkUtils;
  * activity presents a grid of items as cards.
  */
 public class ArticleListActivity extends AppCompatActivity implements
-        LoaderManager.LoaderCallbacks<Cursor>, AppBarLayout.OnOffsetChangedListener {
+        LoaderManager.LoaderCallbacks<Cursor>,
+        AppBarLayout.OnOffsetChangedListener,
+        ArticleItemsAdapter.AdapterItemListener {
+
+
+    /*@Bind(R.id.toolbar)
+    Toolbar mToolbar;*/
+
+    @Bind(R.id.main_appbar)
+    AppBarLayout mAppBarLayout;
+    @Bind(R.id.main_logo)
+    ImageView mLogo;
+    @Bind(R.id.activity_list_container)
+    CoordinatorLayout mCoordinatorLayout;
+    @Bind(R.id.swipe_refresh_layout)
+    SwipeRefreshLayout mSwipeRefreshLayout;
+    @Bind(R.id.recycler_view)
+    RecyclerView mRecyclerView;
+    @BindInt(R.integer.list_column_count)
+    int mColumnCount;
+    @BindDimen(R.dimen.normal_space)
+    int mItemsViewSpace;
 
     private boolean mIsAppStart;
-    private ImageView mLogo;
     private boolean mLogoShown;
     private static int PERCENT_TO_ANIMATE_LOGO = 20;
 
-    private SwipeRefreshLayout mSwipeRefreshLayout;
-    private RecyclerView mRecyclerView;
-
     private View.OnClickListener mSnackBarOnClickListener;
     private Snackbar mSnackBar;
-    private AppBarLayout mAppBarLayout;
     private int mMaxAppBarScrollRange;
+    ArticleItemsAdapter mAdapter = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_article_list);
+        ButterKnife.bind(this);
 
         mIsAppStart = true;
 
         initLogo();
         initAppbarLayout();
         initSwipeRefresh();
-        initRecyclerView();
         setSnackBarListener();
-        initLoader();
+
+        StaggeredGridLayoutManager sglm = new StaggeredGridLayoutManager(mColumnCount, StaggeredGridLayoutManager.VERTICAL);
+        SpaceItemDecoration spaceItemDecoration = new SpaceItemDecoration(mItemsViewSpace);
+
+        mAdapter = new ArticleItemsAdapter(this, this);
+        mAdapter.setHasStableIds(true);
+        mRecyclerView.setAdapter(mAdapter);
+        mRecyclerView.setLayoutManager(sglm);
+        mRecyclerView.addItemDecoration(spaceItemDecoration);
+
+        getLoaderManager().initLoader(0, null, this);
 
         if (savedInstanceState == null) {
             refresh();
@@ -76,8 +110,6 @@ public class ArticleListActivity extends AppCompatActivity implements
 
 
     private void initLogo() {
-        mLogo = (ImageView) findViewById(R.id.main_logo);
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             Animation animation = AnimationUtils.loadAnimation(this, R.anim.slide_down_logo);
             mLogo.setAnimation(animation);
@@ -85,7 +117,7 @@ public class ArticleListActivity extends AppCompatActivity implements
     }
 
     private void initAppbarLayout() {
-        mAppBarLayout = (AppBarLayout) findViewById(R.id.main_appbar);
+        //mAppBarLayout = (AppBarLayout) findViewById(R.id.main_appbar);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             mMaxAppBarScrollRange = mAppBarLayout.getTotalScrollRange();
             mAppBarLayout.addOnOffsetChangedListener(this);
@@ -93,18 +125,13 @@ public class ArticleListActivity extends AppCompatActivity implements
     }
 
     private void initSwipeRefresh() {
-        mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh_layout);
+        mSwipeRefreshLayout.setColorSchemeColors(getResources().getIntArray(R.array.progress_colors));
         mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
                 refresh();
             }
         });
-    }
-
-
-    private void initRecyclerView() {
-        mRecyclerView = (RecyclerView) findViewById(R.id.recycler_view);
     }
 
     private void setSnackBarListener() {
@@ -114,10 +141,6 @@ public class ArticleListActivity extends AppCompatActivity implements
                 refresh();
             }
         };
-    }
-
-    private void initLoader() {
-        getLoaderManager().initLoader(0, null, this);
     }
 
 
@@ -183,13 +206,7 @@ public class ArticleListActivity extends AppCompatActivity implements
 
     @Override
     public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor) {
-        Adapter adapter = new Adapter(cursor);
-        adapter.setHasStableIds(true);
-        mRecyclerView.setAdapter(adapter);
-        int columnCount = getResources().getInteger(R.integer.list_column_count);
-        StaggeredGridLayoutManager sglm =
-                new StaggeredGridLayoutManager(columnCount, StaggeredGridLayoutManager.VERTICAL);
-        mRecyclerView.setLayoutManager(sglm);
+        mAdapter.swapCursor(cursor);
     }
 
 
@@ -220,89 +237,23 @@ public class ArticleListActivity extends AppCompatActivity implements
         }
     }
 
-    private class Adapter extends RecyclerView.Adapter<ViewHolder> {
-        private Cursor mCursor;
 
-        public Adapter(Cursor cursor) {
-            mCursor = cursor;
+    @Override
+    public void onItemClick(Uri uri, int position, View view) {
+        ActivityOptionsCompat options = null;
+        if (mIsRefreshing) {
+            Toast.makeText(ArticleListActivity.this,
+                    R.string.still_loading, Toast.LENGTH_SHORT).show();
+            return;
         }
+        Intent intent = new Intent(ArticleListActivity.this, ArticleDetailActivity.class)
+                .putExtra(Constants.SELECTED_ITEM_POSITION, position);
 
-        @Override
-        public long getItemId(int position) {
-            mCursor.moveToPosition(position);
-            return mCursor.getLong(ArticleLoader.Query._ID);
-        }
-
-        @Override
-        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            //Inflate a layout that will be used to the RecyclerView UI
-            View view = getLayoutInflater().inflate(R.layout.list_item_article, parent, false);
-            final ViewHolder vh = new ViewHolder(view);
-            view.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    if (mIsRefreshing) {
-                        Toast.makeText(ArticleListActivity.this,
-                                R.string.till_loading, Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    Intent intent = new Intent(ArticleListActivity.this, ArticleDetailActivity.class)
-                            .putExtra(Constants.SELECTED_ITEM_POSITION, vh.getAdapterPosition());
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        // Add transition
-                        TextView title = (TextView) view.findViewById(R.id.article_title);
-                        String transitionName = getString(R.string.shared_element_transition)
-                                + String.valueOf(getItemId(vh.getAdapterPosition()));
-                        title.setTransitionName(transitionName);
-
-                        Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(
-                                ArticleListActivity.this,
-                                title,
-                                transitionName).toBundle();
-                        ActivityCompat.startActivity(ArticleListActivity.this, intent, bundle);
-                    } else {
-                        startActivity(intent);
-                    }
-                }
-            });
-            return vh;
-        }
-
-        @Override
-        public void onBindViewHolder(ViewHolder holder, int position) {
-            mCursor.moveToPosition(position);
-            holder.titleView.setText(mCursor.getString(ArticleLoader.Query.TITLE));
-            holder.subtitleView.setText(
-                    DateUtils.getRelativeTimeSpanString(
-                            mCursor.getLong(ArticleLoader.Query.PUBLISHED_DATE),
-                            System.currentTimeMillis(), DateUtils.HOUR_IN_MILLIS,
-                            DateUtils.FORMAT_ABBREV_ALL).toString()
-                            + " by "
-                            + mCursor.getString(ArticleLoader.Query.AUTHOR));
-            holder.thumbnailView.setImageUrl(
-                    mCursor.getString(ArticleLoader.Query.THUMB_URL),
-                    ImageLoaderHelper.getInstance(ArticleListActivity.this).getImageLoader());
-            holder.thumbnailView.setAspectRatio(mCursor.getFloat(ArticleLoader.Query.ASPECT_RATIO));
-        }
-
-        @Override
-        public int getItemCount() {
-            return mCursor.getCount();
-        }
-    }
-
-    public static class ViewHolder extends RecyclerView.ViewHolder {
-        public DynamicHeightNetworkImageView thumbnailView;
-        public TextView titleView;
-        public TextView subtitleView;
-
-        public ViewHolder(View view) {
-            super(view);
-            thumbnailView = (DynamicHeightNetworkImageView) view.findViewById(R.id.thumbnail);
-            titleView = (TextView) view.findViewById(R.id.article_title);
-            subtitleView = (TextView) view.findViewById(R.id.article_subtitle);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, view, view.getTransitionName());
+            ActivityCompat.startActivity(ArticleListActivity.this, intent, options.toBundle());
+        } else {
+            startActivity(intent);
         }
     }
 
@@ -310,7 +261,7 @@ public class ArticleListActivity extends AppCompatActivity implements
     /* SnackBar showing no connectivity */
     private void showSnackBar() {
         mSnackBar = Snackbar
-                .make(findViewById(R.id.activity_list_container), R.string.no_internet, Snackbar.LENGTH_INDEFINITE)
+                .make(mCoordinatorLayout, R.string.no_internet, Snackbar.LENGTH_INDEFINITE)
                 .setAction(R.string.retry, mSnackBarOnClickListener);
         mSnackBar.setActionTextColor(getResources().getColor(R.color.theme_accent));
         View v = mSnackBar.getView();
