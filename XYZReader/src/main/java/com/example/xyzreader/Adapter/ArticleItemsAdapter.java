@@ -9,13 +9,13 @@ import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.xyzreader.R;
 import com.example.xyzreader.data.ArticleLoader;
 import com.example.xyzreader.data.ItemsContract;
-import com.example.xyzreader.ui.DynamicHeightNetworkImageView;
-import com.example.xyzreader.ui.ImageLoaderHelper;
+import com.squareup.picasso.Picasso;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -62,12 +62,24 @@ public class ArticleItemsAdapter extends RecyclerView.Adapter<ArticleItemsAdapte
                                 .toString() + " by " + mCursor.getString(ArticleLoader.Query.AUTHOR)
                 );
 
-        holder.thumbnailView.setImageUrl(
+        String article_image= mCursor.getString(ArticleLoader.Query.THUMB_URL);
+        //Log.v("article_image", article_image);
+
+        // Use Picasso library for image loading
+        //http://stackoverflow.com/questions/20823249/resize-image-to-full-width-and-fixed-height-with-picasso
+        Picasso.with(mContext)
+                .load(article_image)
+                .placeholder(R.drawable.empty_detail)
+                .error(R.drawable.empty_detail)
+                .fit().centerCrop()
+                .into(holder.thumbnailView);
+
+       /* holder.thumbnailView.setImageUrl(
                 mCursor.getString(ArticleLoader.Query.THUMB_URL),
                 ImageLoaderHelper.getInstance(mContext).getImageLoader()
         );
-
         holder.thumbnailView.setAspectRatio(mCursor.getFloat(ArticleLoader.Query.ASPECT_RATIO));
+        */
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             holder.thumbnailView.setTransitionName(String.valueOf(position));
@@ -95,12 +107,14 @@ public class ArticleItemsAdapter extends RecyclerView.Adapter<ArticleItemsAdapte
     }
 
     public interface AdapterItemListener {
-        public void onItemClick(Uri uri, int position, View v);
+        void onItemClick(Uri uri, int position, View v);
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         @Bind(R.id.thumbnail)
-        DynamicHeightNetworkImageView thumbnailView;
+        ImageView thumbnailView;
+        //DynamicHeightNetworkImageView thumbnailView;
+
         @Bind(R.id.article_title)
         TextView titleView;
         @Bind(R.id.article_subtitle)
