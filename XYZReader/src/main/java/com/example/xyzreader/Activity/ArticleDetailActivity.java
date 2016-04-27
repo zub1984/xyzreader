@@ -25,6 +25,7 @@ import com.example.xyzreader.data.ArticleLoader;
 import com.example.xyzreader.data.ItemsContract;
 import com.example.xyzreader.fragment.ArticleDetailFragment;
 import com.example.xyzreader.ui.WindowInsetsViewPager;
+import com.example.xyzreader.utils.Constants;
 
 import java.util.List;
 import java.util.Map;
@@ -42,7 +43,6 @@ public class ArticleDetailActivity extends AppCompatActivity
     private long mStartId;
 
 
-    private static final String STATE_CURRENT_PAGE_POSITION = "state_current_page_position";
     private int mCurrentPosition;
     private int mStartingPosition;
     private boolean mIsReturning;
@@ -93,7 +93,7 @@ public class ArticleDetailActivity extends AppCompatActivity
             setEnterSharedElementCallback(mCallback);
         }
 
-        mStartingPosition = getIntent().getIntExtra(ArticleListActivity.EXTRA_STARTING_ITEM_POSITION, 0);
+        mStartingPosition = getIntent().getIntExtra(Constants.EXTRA_STARTING_ITEM_POSITION, 0);
         if (savedInstanceState == null) {
             mCurrentPosition=mStartingPosition;
             if (getIntent() != null && getIntent().getData() != null) {
@@ -101,7 +101,7 @@ public class ArticleDetailActivity extends AppCompatActivity
             }
         }
         else{
-            mCurrentPosition = savedInstanceState.getInt(STATE_CURRENT_PAGE_POSITION);
+            mCurrentPosition = savedInstanceState.getInt(Constants.STATE_CURRENT_PAGE_POSITION);
         }
 
         getLoaderManager().initLoader(0, null, this);
@@ -137,15 +137,15 @@ public class ArticleDetailActivity extends AppCompatActivity
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putInt(STATE_CURRENT_PAGE_POSITION, mCurrentPosition);
+        outState.putInt(Constants.STATE_CURRENT_PAGE_POSITION, mCurrentPosition);
     }
 
     @Override
     public void finishAfterTransition() {
         mIsReturning = true;
         Intent data = new Intent();
-        data.putExtra(ArticleListActivity.EXTRA_STARTING_ITEM_POSITION, mStartingPosition);
-        data.putExtra(ArticleListActivity.EXTRA_CURRENT_ITEM_POSITION, mCurrentPosition);
+        data.putExtra(Constants.EXTRA_STARTING_ITEM_POSITION, mStartingPosition);
+        data.putExtra(Constants.EXTRA_CURRENT_ITEM_POSITION, mCurrentPosition);
         setResult(RESULT_OK, data);
         super.finishAfterTransition();
     }

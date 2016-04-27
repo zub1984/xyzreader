@@ -25,7 +25,7 @@ import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.text.format.DateUtils;
 import android.text.method.LinkMovementMethod;
-import android.util.Log;
+import android.transition.Transition;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,25 +36,31 @@ import android.widget.TextView;
 
 import com.example.xyzreader.Activity.ArticleDetailActivity;
 import com.example.xyzreader.Activity.ArticleListActivity;
+import com.example.xyzreader.Adapter.TransitionListenerAdapter;
 import com.example.xyzreader.R;
 import com.example.xyzreader.data.ArticleLoader;
+import com.example.xyzreader.utils.Constants;
 import com.squareup.picasso.Picasso;
+import com.squareup.picasso.RequestCreator;
+import com.squareup.picasso.Target;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
+
 
 /**
  * A fragment representing a single Article detail screen. This fragment is
  * either contained in a {@link ArticleListActivity} in two-pane mode (on
  * tablets) or a {@link ArticleDetailActivity} on handsets.
+ *
+ * Many thanks to alexjlockwood for shared transition example
+ * https://github.com/alexjlockwood/activity-transitions
  */
 public class ArticleDetailFragment extends Fragment implements
         LoaderManager.LoaderCallbacks<Cursor> {
     private static final String TAG = "ArticleDetailFragment";
-    public static final String ARG_ITEM_ID = "item_id";
     private Cursor mCursor;
     private long mItemId;
-
 
     private View mRootView;
     @Bind(R.id.article_body)
@@ -75,28 +81,14 @@ public class ArticleDetailFragment extends Fragment implements
     @Bind(R.id.share_fab)
     FloatingActionButton mFab;
 
-    private int mMutedColor = 0xFF333333;
     private int mThemeDark;
     private int mThemePrimary;
 
-    private static final String ARG_ITEM_IMAGE_POSITION = "arg_item_image_position";
-    private static final String ARG_STARTING_ITEM_IMAGE_POSITION = "arg_starting_item_image_position";
     private int mStartingPosition;
     private int mArticlePosition;
     private boolean mIsTransitioning;
     private long mBackgroundImageFadeMillis;
 
-    /*private final Callback mImageCallback = new Callback() {
-        @Override
-        public void onSuccess() {
-            startPostponedEnterTransition();
-        }
-
-        @Override
-        public void onError() {
-            startPostponedEnterTransition();
-        }
-    };*/
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -105,12 +97,12 @@ public class ArticleDetailFragment extends Fragment implements
     public ArticleDetailFragment() {
     }
 
-    public static ArticleDetailFragment newInstance(long itemId,int position, int startingPosition) {
+    public static ArticleDetailFragment newInstance(long itemId, int position, int startingPosition) {
         Bundle arguments = new Bundle();
-        arguments.putLong(ARG_ITEM_ID, itemId);
+        arguments.putLong(Constants.ARG_ITEM_ID, itemId);
 
-        arguments.putInt(ARG_ITEM_IMAGE_POSITION, position);
-        arguments.putInt(ARG_STARTING_ITEM_IMAGE_POSITION, startingPosition);
+        arguments.putInt(Constants.ARG_ITEM_IMAGE_POSITION, position);
+        arguments.putInt(Constants.ARG_STARTING_ITEM_IMAGE_POSITION, startingPosition);
 
         ArticleDetailFragment fragment = new ArticleDetailFragment();
         fragment.setArguments(arguments);
@@ -121,10 +113,10 @@ public class ArticleDetailFragment extends Fragment implements
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (getArguments().containsKey(ARG_ITEM_ID)) {
-            mItemId = getArguments().getLong(ARG_ITEM_ID);
-            mStartingPosition = getArguments().getInt(ARG_STARTING_ITEM_IMAGE_POSITION);
-            mArticlePosition = getArguments().getInt(ARG_ITEM_IMAGE_POSITION);
+        if (getArguments().containsKey(Constants.ARG_ITEM_ID)) {
+            mItemId = getArguments().getLong(Constants.ARG_ITEM_ID);
+            mStartingPosition = getArguments().getInt(Constants.ARG_STARTING_ITEM_IMAGE_POSITION);
+            mArticlePosition = getArguments().getInt(Constants.ARG_ITEM_IMAGE_POSITION);
             mIsTransitioning = savedInstanceState == null && mStartingPosition == mArticlePosition;
             mBackgroundImageFadeMillis = getResources().getInteger(R.integer.fragment_details_background_image_fade_millis);
         }
@@ -151,7 +143,7 @@ public class ArticleDetailFragment extends Fragment implements
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-            Bundle savedInstanceState) {
+                             Bundle savedInstanceState) {
         mRootView = inflater.inflate(R.layout.fragment_article_detail, container, false);
         ButterKnife.bind(this, mRootView);
         mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
@@ -180,8 +172,6 @@ public class ArticleDetailFragment extends Fragment implements
             return;
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            //TODO - to check about using the shared element name with itemId
-            //mTitleView.setTransitionName(getActivity().getString(R.string.shared_element_transition) + mItemId);
             mPhotoView.setTransitionName(String.valueOf(mArticlePosition));
         }
 
@@ -205,17 +195,30 @@ public class ArticleDetailFragment extends Fragment implements
 
             mBodyView.setText(Html.fromHtml(mCursor.getString(ArticleLoader.Query.BODY)));
 
+            // Use Picasso library
             String image_url = mCursor.getString(ArticleLoader.Query.PHOTO_URL);
-            BitmapLoaderTarget bitmapLoaderTarget = new BitmapLoaderTarget();
-
-            // use Picasso library
-            Picasso.with(getActivity())
+            RequestCreator backgroundImageRequest = Picasso.with(getActivity())
                     .load(image_url)
                     .placeholder(R.drawable.empty_detail)
-                    .error(R.drawable.empty_detail)
-                    .into(bitmapLoaderTarget);
+                    .error(R.drawable.empty_detail);
 
-          /*  ImageLoaderHelper.getInstance(getActivity()).getImageLoader()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                if (mIsTransitioning) {
+                    backgroundImageRequest.noFade();
+                    mPhotoView.setAlpha(0f);
+                    getActivity().getWindow().getSharedElementEnterTransition().addListener(new TransitionListenerAdapter() {
+                        @Override
+                        public void onTransitionEnd(Transition transition) {
+                            mPhotoView.animate().setDuration(mBackgroundImageFadeMillis).alpha(1f);
+                        }
+                    });
+                }
+            }
+            backgroundImageRequest.into(bitmapLoaderTarget);
+            mPhotoView.setTag(bitmapLoaderTarget);
+
+            // Say bye to volley, use Picasso
+            /*ImageLoaderHelper.getInstance(getActivity()).getImageLoader()
                     .get(mCursor.getString(ArticleLoader.Query.PHOTO_URL), new ImageLoader.ImageListener() {
                         @Override
                         public void onResponse(ImageLoader.ImageContainer imageContainer, boolean b) {
@@ -245,16 +248,23 @@ public class ArticleDetailFragment extends Fragment implements
     }
 
 
-    public class BitmapLoaderTarget implements com.squareup.picasso.Target{
+   // http://stackoverflow.com/questions/24180805/onbitmaploaded-of-target-object-not-called-on-first-load
+   final Target bitmapLoaderTarget = new com.squareup.picasso.Target () {
         @Override
         public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
-            Palette.from(bitmap).generate(paletteListener);
-            mPhotoView.setImageBitmap(bitmap);
-            startPostponedEnterTransition();
+            if(bitmap!=null){
+                Palette.from(bitmap).generate(paletteListener);
+                mPhotoView.setImageBitmap(bitmap);
+                startPostponedEnterTransition();
+            }
+            else{
+                mPhotoView.setImageDrawable(ContextCompat.getDrawable(getActivity(),R.drawable.empty_detail));
+            }
         }
 
         @Override
         public void onBitmapFailed(Drawable errorDrawable) {
+            mPhotoView.setImageDrawable(ContextCompat.getDrawable(getActivity(),R.drawable.empty_detail));
             startPostponedEnterTransition();
         }
 
@@ -262,7 +272,7 @@ public class ArticleDetailFragment extends Fragment implements
         public void onPrepareLoad(Drawable placeHolderDrawable) {
             startPostponedEnterTransition();
         }
-    }
+    };
 
 
     Palette.PaletteAsyncListener paletteListener = new Palette.PaletteAsyncListener() {
@@ -272,6 +282,7 @@ public class ArticleDetailFragment extends Fragment implements
     };
 
     private void applyPalette(Palette palette) {
+        int mMutedColor = 0xFF333333;
         mCollapsingToolbar.setStatusBarScrimColor(palette.getDarkMutedColor(mThemeDark));
         mCollapsingToolbar.setContentScrimColor(palette.getMutedColor(mThemePrimary));
         mMetaBar.setBackgroundColor(palette.getDarkMutedColor(mMutedColor));
@@ -307,16 +318,15 @@ public class ArticleDetailFragment extends Fragment implements
 
         mCursor = cursor;
         if (mCursor != null && !mCursor.moveToFirst()) {
-            Log.e(TAG, "Error reading item detail cursor");
             mCursor.close();
             mCursor = null;
         }
         bindViews();
-        scheduleStartPostponedEnterTransition(mTitleView);
+        scheduleStartPostponedEnterTransition(mPhotoView);
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private void scheduleStartPostponedEnterTransition(final View sElement){
+    private void scheduleStartPostponedEnterTransition(final View sElement) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             sElement.getViewTreeObserver().addOnPreDrawListener(
                     new ViewTreeObserver.OnPreDrawListener() {
@@ -371,4 +381,11 @@ public class ArticleDetailFragment extends Fragment implements
         return view.getLocalVisibleRect(containerBounds);
     }
 
-  }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        ButterKnife.unbind(this);
+    }
+
+}

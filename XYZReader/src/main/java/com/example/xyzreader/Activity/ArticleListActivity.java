@@ -13,11 +13,13 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
@@ -35,6 +37,7 @@ import com.example.xyzreader.R;
 import com.example.xyzreader.data.ArticleLoader;
 import com.example.xyzreader.data.UpdaterService;
 import com.example.xyzreader.ui.SpaceItemDecoration;
+import com.example.xyzreader.utils.Constants;
 import com.example.xyzreader.utils.NetworkUtils;
 
 import java.util.List;
@@ -50,6 +53,9 @@ import butterknife.ButterKnife;
  * handset and tablet-size devices. On handsets, the activity presents a list of items, which when
  * touched, lead to a {@link ArticleDetailActivity} representing item details. On tablets, the
  * activity presents a grid of items as cards.
+ * <p>
+ * Many thanks to alexjlockwood for shared transition example
+ * https://github.com/alexjlockwood/activity-transitions
  */
 public class ArticleListActivity extends AppCompatActivity implements
         LoaderManager.LoaderCallbacks<Cursor>,
@@ -75,9 +81,12 @@ public class ArticleListActivity extends AppCompatActivity implements
     @BindDimen(R.dimen.normal_space)
     int mItemsViewSpace;
 
+    @Nullable
+    @Bind(android.support.design.R.id.snackbar_text)
+    TextView snackBarText;
+
     private boolean mIsAppStart;
     private boolean mLogoShown;
-    private static int PERCENT_TO_ANIMATE_LOGO = 20;
 
     private View.OnClickListener mSnackBarOnClickListener;
     private Snackbar mSnackBar;
@@ -86,10 +95,8 @@ public class ArticleListActivity extends AppCompatActivity implements
     private boolean mIsRefreshing = false;
 
 
-    static final String EXTRA_STARTING_ITEM_POSITION = "extra_starting_item_position";
-    static final String EXTRA_CURRENT_ITEM_POSITION = "extra_current_item_position";
     private Bundle mTmpReenterState;
-    private  SharedElementCallback mCallback;
+    private SharedElementCallback mCallback;
     private boolean mIsDetailsActivityStarted;
 
 
@@ -99,8 +106,8 @@ public class ArticleListActivity extends AppCompatActivity implements
             @Override
             public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
                 if (mTmpReenterState != null) {
-                    int startingPosition = mTmpReenterState.getInt(EXTRA_STARTING_ITEM_POSITION);
-                    int currentPosition = mTmpReenterState.getInt(EXTRA_CURRENT_ITEM_POSITION);
+                    int startingPosition = mTmpReenterState.getInt(Constants.EXTRA_STARTING_ITEM_POSITION);
+                    int currentPosition = mTmpReenterState.getInt(Constants.EXTRA_CURRENT_ITEM_POSITION);
                     if (startingPosition != currentPosition) {
                         // If startingPosition != currentPosition the user must have swiped to a
                         // different page in the DetailsActivity. We must update the shared element
@@ -218,8 +225,8 @@ public class ArticleListActivity extends AppCompatActivity implements
     public void onActivityReenter(int requestCode, Intent data) {
         super.onActivityReenter(requestCode, data);
         mTmpReenterState = new Bundle(data.getExtras());
-        int startingPosition = mTmpReenterState.getInt(EXTRA_STARTING_ITEM_POSITION);
-        int currentPosition = mTmpReenterState.getInt(EXTRA_CURRENT_ITEM_POSITION);
+        int startingPosition = mTmpReenterState.getInt(Constants.EXTRA_STARTING_ITEM_POSITION);
+        int currentPosition = mTmpReenterState.getInt(Constants.EXTRA_CURRENT_ITEM_POSITION);
         if (startingPosition != currentPosition) {
             mRecyclerView.scrollToPosition(currentPosition);
         }
@@ -310,12 +317,12 @@ public class ArticleListActivity extends AppCompatActivity implements
 
                 int percentage = (Math.abs(verticalOffset) * 100) / mMaxAppBarScrollRange;
 
-                if (percentage >= PERCENT_TO_ANIMATE_LOGO && mLogoShown) {
+                if (percentage >= Constants.PERCENT_TO_ANIMATE_LOGO && mLogoShown) {
                     mLogoShown = false;
                     mLogo.animate().scaleX(0).scaleY(0).setDuration(200).start();
                 }
 
-                if (percentage < PERCENT_TO_ANIMATE_LOGO && !mLogoShown) {
+                if (percentage < Constants.PERCENT_TO_ANIMATE_LOGO && !mLogoShown) {
                     mLogoShown = true;
                     mLogo.animate().scaleX(1).scaleY(1).setDuration(200).start();
                 }
@@ -338,16 +345,12 @@ public class ArticleListActivity extends AppCompatActivity implements
 
         }
 
-        if(!mIsDetailsActivityStarted){
+        if (!mIsDetailsActivityStarted) {
             mIsDetailsActivityStarted = true;
             Intent intent = new Intent(ArticleListActivity.this, ArticleDetailActivity.class)
-                    .putExtra(EXTRA_STARTING_ITEM_POSITION, position);
+                    .putExtra(Constants.EXTRA_STARTING_ITEM_POSITION, position);
             ActivityCompat.startActivity(ArticleListActivity.this, intent, options == null ? null : options.toBundle());
         }
-
-        /*else {
-            startActivity(intent);
-        }*/
     }
 
 
@@ -356,11 +359,12 @@ public class ArticleListActivity extends AppCompatActivity implements
         mSnackBar = Snackbar
                 .make(mCoordinatorLayout, R.string.no_internet, Snackbar.LENGTH_INDEFINITE)
                 .setAction(R.string.retry, mSnackBarOnClickListener);
-        mSnackBar.setActionTextColor(getResources().getColor(R.color.theme_accent));
+
+        //http://stackoverflow.com/questions/31842983/getresources-getcolor-is-deprecated
+        mSnackBar.setActionTextColor(ContextCompat.getColor(this, R.color.theme_accent));
         View v = mSnackBar.getView();
         v.setBackgroundColor(Color.DKGRAY);
-        TextView textView = (TextView) v.findViewById(android.support.design.R.id.snackbar_text);
-        textView.setTextColor(Color.WHITE);
+        snackBarText.setTextColor(Color.WHITE);
         mSnackBar.show();
     }
 

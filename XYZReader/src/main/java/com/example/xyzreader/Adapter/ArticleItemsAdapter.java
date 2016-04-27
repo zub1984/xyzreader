@@ -64,7 +64,6 @@ public class ArticleItemsAdapter extends RecyclerView.Adapter<ArticleItemsAdapte
 
         String article_image= mCursor.getString(ArticleLoader.Query.THUMB_URL);
         //Log.v("article_image", article_image);
-
         // Use Picasso library for image loading
         //http://stackoverflow.com/questions/20823249/resize-image-to-full-width-and-fixed-height-with-picasso
         Picasso.with(mContext)
@@ -74,6 +73,7 @@ public class ArticleItemsAdapter extends RecyclerView.Adapter<ArticleItemsAdapte
                 .fit().centerCrop()
                 .into(holder.thumbnailView);
 
+        // Say bye to volley, use Picasso
        /* holder.thumbnailView.setImageUrl(
                 mCursor.getString(ArticleLoader.Query.THUMB_URL),
                 ImageLoaderHelper.getInstance(mContext).getImageLoader()

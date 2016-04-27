@@ -28,7 +28,8 @@
             android:layout_height="wrap_content"
             android:background="@color/photo_placeholder"
             android:adjustViewBounds="true"
-            android:scaleType="centerCrop"/>
+            android:scaleType="centerCrop"
+            tools:ignore="ContentDescription"/>
 
         <TextView
             android:id="@+id/article_title"
