@@ -1,6 +1,5 @@
 package com.example.xyzreader.fragment;
 
-import android.annotation.TargetApi;
 import android.app.Fragment;
 import android.app.LoaderManager;
 import android.content.Intent;
@@ -322,23 +321,9 @@ public class ArticleDetailFragment extends Fragment implements
             mCursor = null;
         }
         bindViews();
-        scheduleStartPostponedEnterTransition(mPhotoView);
+        startPostponedEnterTransition();
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private void scheduleStartPostponedEnterTransition(final View sElement) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            sElement.getViewTreeObserver().addOnPreDrawListener(
-                    new ViewTreeObserver.OnPreDrawListener() {
-                        @Override
-                        public boolean onPreDraw() {
-                            sElement.getViewTreeObserver().removeOnPreDrawListener(this);
-                            getActivity().startPostponedEnterTransition();
-                            return true;
-                        }
-                    });
-        }
-    }
 
     @Override
     public void onLoaderReset(Loader<Cursor> cursorLoader) {
@@ -346,14 +331,16 @@ public class ArticleDetailFragment extends Fragment implements
         bindViews();
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void startPostponedEnterTransition() {
         if (mArticlePosition == mStartingPosition) {
             mPhotoView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
                 @Override
                 public boolean onPreDraw() {
                     mPhotoView.getViewTreeObserver().removeOnPreDrawListener(this);
-                    getActivity().startPostponedEnterTransition();
+                    //apply transition for applicable device
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        getActivity().startPostponedEnterTransition();
+                    }
                     return true;
                 }
             });
