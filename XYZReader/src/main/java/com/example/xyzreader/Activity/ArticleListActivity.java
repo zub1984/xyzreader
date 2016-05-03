@@ -145,13 +145,15 @@ public class ArticleListActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_article_list);
         ButterKnife.bind(this);
+        mToolbar.setTitle("");
+        setSupportActionBar(mToolbar);
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             SharedElementCallbackTransition();
             setExitSharedElementCallback(mCallback);
         }
 
         mIsAppStart = true;
-
         initLogo();
         initAppbarLayout();
         initSwipeRefresh();
